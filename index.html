@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор стоимости услуги</title>
+    <title>Калькулятор стоимости услуг</title>
     <style>
         * {
             box-sizing: border-box;
@@ -11,7 +11,7 @@
         }
         
         body {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f7fa;
@@ -54,14 +54,23 @@
         }
         
         .radio-group {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
         }
         
         .radio-option {
             display: flex;
             align-items: center;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        
+        .radio-option:hover {
+            background-color: #f8f9fa;
+            border-color: #3498db;
         }
         
         .radio-option input {
@@ -80,6 +89,15 @@
         .checkbox-option {
             display: flex;
             align-items: center;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        
+        .checkbox-option:hover {
+            background-color: #f8f9fa;
+            border-color: #3498db;
         }
         
         .checkbox-option input {
@@ -117,15 +135,22 @@
             margin-top: 10px;
             font-size: 14px;
         }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
-    <h1>Калькулятор стоимости услуги</h1>
+    <h1>Калькулятор стоимости услуг</h1>
     
     <div class="calculator">
         <div class="form-group">
             <label for="quantity">Количество:</label>
-            <input type="number" id="quantity" min="1" value="1">
+            <input type="number" id="quantity" min="1" step="1" value="1">
+            <div class="error-message hidden" id="quantity-error">Количество должно быть целым числом больше 0</div>
         </div>
         
         <div class="form-group">
@@ -143,6 +168,14 @@
                     <input type="radio" id="type3" name="serviceType" value="design">
                     <label for="type3">Дизайн</label>
                 </div>
+                <div class="radio-option">
+                    <input type="radio" id="type4" name="serviceType" value="marketing">
+                    <label for="type4">Интернет-маркетинг</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="type5" name="serviceType" value="support">
+                    <label for="type5">Техподдержка</label>
+                </div>
             </div>
         </div>
         
@@ -156,7 +189,7 @@
         <div class="form-group hidden" id="property-group">
             <div class="checkbox-option">
                 <input type="checkbox" id="property">
-                <label for="property">Срочный заказ (+30%)</label>
+                <label for="property" id="property-label">Срочный заказ (+30%)</label>
             </div>
         </div>
         
@@ -173,11 +206,13 @@
     <script>
         // Получаем элементы DOM
         const quantityInput = document.getElementById('quantity');
+        const quantityError = document.getElementById('quantity-error');
         const serviceTypeRadios = document.querySelectorAll('input[name="serviceType"]');
         const optionsGroup = document.getElementById('options-group');
         const optionsSelect = document.getElementById('options');
         const propertyGroup = document.getElementById('property-group');
         const propertyCheckbox = document.getElementById('property');
+        const propertyLabel = document.getElementById('property-label');
         const totalPriceElement = document.getElementById('total-price');
         const serviceInfoElement = document.getElementById('service-info');
         
@@ -185,7 +220,9 @@
         const basePrices = {
             'web': 15000,
             'seo': 8000,
-            'design': 12000
+            'design': 12000,
+            'marketing': 10000,
+            'support': 5000
         };
         
         // Опции для каждого типа услуги
@@ -193,26 +230,81 @@
             'web': [
                 { value: 'landing', name: 'Лендинг', price: 5000 },
                 { value: 'corporate', name: 'Корпоративный сайт', price: 15000 },
-                { value: 'shop', name: 'Интернет-магазин', price: 30000 }
+                { value: 'shop', name: 'Интернет-магазин', price: 30000 },
+                { value: 'portal', name: 'Информационный портал', price: 25000 }
             ],
             'seo': [
                 { value: 'basic', name: 'Базовая оптимизация', price: 5000 },
                 { value: 'advanced', name: 'Продвинутая оптимизация', price: 15000 },
-                { value: 'complex', name: 'Комплексное продвижение', price: 25000 }
+                { value: 'complex', name: 'Комплексное продвижение', price: 25000 },
+                { value: 'regional', name: 'Региональное продвижение', price: 20000 }
             ],
             'design': [
                 { value: 'logo', name: 'Дизайн логотипа', price: 5000 },
                 { value: 'brandbook', name: 'Брендбук', price: 20000 },
-                { value: 'uiux', name: 'UI/UX дизайн', price: 25000 }
+                { value: 'uiux', name: 'UI/UX дизайн', price: 25000 },
+                { value: 'print', name: 'Полиграфический дизайн', price: 15000 }
+            ],
+            'marketing': [
+                { value: 'smm', name: 'SMM продвижение', price: 12000 },
+                { value: 'context', name: 'Контекстная реклама', price: 15000 },
+                { value: 'email', name: 'Email-маркетинг', price: 8000 },
+                { value: 'video', name: 'Видеомаркетинг', price: 20000 }
+            ],
+            'support': [
+                { value: 'basic', name: 'Базовая поддержка', price: 3000 },
+                { value: 'advanced', name: 'Расширенная поддержка', price: 7000 },
+                { value: 'vip', name: 'VIP поддержка', price: 15000 }
             ]
+        };
+        
+        // Свойства для каждого типа услуги
+        const serviceProperties = {
+            'web': {
+                label: 'Срочная разработка (+25%)',
+                multiplier: 1.25
+            },
+            'seo': {
+                label: 'Расширенная аналитика (+20%)',
+                multiplier: 1.2
+            },
+            'design': {
+                label: 'Срочный заказ (+30%)',
+                multiplier: 1.3
+            },
+            'marketing': {
+                label: 'Расширенная отчетность (+15%)',
+                multiplier: 1.15
+            },
+            'support': {
+                label: 'Круглосуточная поддержка (+40%)',
+                multiplier: 1.4
+            }
         };
         
         // Описания услуг
         const serviceDescriptions = {
-            'web': 'Разработка веб-сайтов различной сложности',
-            'seo': 'Оптимизация сайта для поисковых систем',
-            'design': 'Создание дизайна для бренда и интерфейсов'
+            'web': 'Разработка веб-сайтов различной сложности и функциональности',
+            'seo': 'Оптимизация сайта для поисковых систем и повышение видимости в поиске',
+            'design': 'Создание дизайна для бренда, интерфейсов и полиграфии',
+            'marketing': 'Комплексное продвижение бизнеса в интернете',
+            'support': 'Техническая поддержка и обслуживание веб-проектов'
         };
+        
+        // Функция для валидации количества
+        function validateQuantity() {
+            const quantity = parseInt(quantityInput.value);
+            
+            if (isNaN(quantity) || quantity < 1 || !Number.isInteger(quantity)) {
+                quantityError.classList.remove('hidden');
+                quantityInput.style.borderColor = '#e74c3c';
+                return false;
+            } else {
+                quantityError.classList.add('hidden');
+                quantityInput.style.borderColor = '#ddd';
+                return true;
+            }
+        }
         
         // Функция для обновления списка опций
         function updateOptions(serviceType) {
@@ -234,8 +326,19 @@
             serviceInfoElement.classList.remove('hidden');
         }
         
+        // Функция для обновления свойств
+        function updateProperties(serviceType) {
+            propertyLabel.textContent = serviceProperties[serviceType].label;
+        }
+        
         // Функция для расчета стоимости
         function calculateTotalPrice() {
+            // Валидируем количество
+            if (!validateQuantity()) {
+                totalPriceElement.textContent = '0';
+                return;
+            }
+            
             // Получаем выбранный тип услуги
             let selectedServiceType = '';
             for (const radio of serviceTypeRadios) {
@@ -246,13 +349,13 @@
             }
             
             // Получаем количество
-            const quantity = parseInt(quantityInput.value) || 0;
+            const quantity = parseInt(quantityInput.value);
             
             // Рассчитываем базовую стоимость
             let basePrice = basePrices[selectedServiceType];
             
             // Добавляем стоимость выбранной опции (если доступны)
-            if (selectedServiceType !== 'design' && !optionsGroup.classList.contains('hidden')) {
+            if (!optionsGroup.classList.contains('hidden')) {
                 const selectedOption = optionsSelect.value;
                 const option = serviceOptions[selectedServiceType].find(opt => opt.value === selectedOption);
                 basePrice += option.price;
@@ -260,8 +363,8 @@
             
             // Применяем коэффициент для свойства (если доступно)
             let totalPrice = basePrice * quantity;
-            if (selectedServiceType === 'design' && !propertyGroup.classList.contains('hidden') && propertyCheckbox.checked) {
-                totalPrice *= 1.3; // +30% за срочный заказ
+            if (!propertyGroup.classList.contains('hidden') && propertyCheckbox.checked) {
+                totalPrice *= serviceProperties[selectedServiceType].multiplier;
             }
             
             // Обновляем отображаемую стоимость
@@ -282,27 +385,30 @@
             // Показываем/скрываем элементы в зависимости от типа услуги
             switch (selectedServiceType) {
                 case 'web':
-                    optionsGroup.classList.remove('hidden');
-                    propertyGroup.classList.add('hidden');
-                    updateOptions('web');
-                    updateServiceInfo('web');
-                    break;
                 case 'seo':
+                case 'marketing':
+                case 'support':
                     optionsGroup.classList.remove('hidden');
-                    propertyGroup.classList.add('hidden');
-                    updateOptions('seo');
-                    updateServiceInfo('seo');
+                    propertyGroup.classList.remove('hidden');
+                    updateOptions(selectedServiceType);
+                    updateProperties(selectedServiceType);
+                    updateServiceInfo(selectedServiceType);
                     break;
                 case 'design':
-                    optionsGroup.classList.add('hidden');
+                    optionsGroup.classList.remove('hidden');
                     propertyGroup.classList.remove('hidden');
+                    updateOptions('design');
+                    updateProperties('design');
                     updateServiceInfo('design');
                     break;
             }
         }
         
         // Назначаем обработчики событий
-        quantityInput.addEventListener('input', calculateTotalPrice);
+        quantityInput.addEventListener('input', function() {
+            validateQuantity();
+            calculateTotalPrice();
+        });
         
         for (const radio of serviceTypeRadios) {
             radio.addEventListener('change', function() {
@@ -315,8 +421,10 @@
         propertyCheckbox.addEventListener('change', calculateTotalPrice);
         
         // Инициализация при загрузке страницы
+        validateQuantity();
         updateVisibility();
         calculateTotalPrice();
     </script>
 </body>
 </html>
+
